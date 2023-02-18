@@ -3,8 +3,10 @@ import pygame as pg
 import random
 import math
 
+# definition of a node object
 class Node:
-    stack  = []
+    # class attributes
+    stack  = []                 # the stack will handle the tree traversal (depth-first search)
     rows = columns = 0
     width = height = 0
 
@@ -19,17 +21,17 @@ class Node:
 
         # for drawing
         self.gridpoints = [
-                ((x+1) * width, (y+1) * height),    # top-left
-                ((x+2) * width, (y+1) * height),    # top-right
-                ((x+2) * width, (y+2) * height),    # bottom-right
-                ((x+1) * width, (y+2) * height)     # bottom-left
+                ((x+1) * width, (y+1) * height),    # top-left point
+                ((x+2) * width, (y+1) * height),    # top-right point
+                ((x+2) * width, (y+2) * height),    # bottom-right point
+                ((x+1) * width, (y+2) * height)     # bottom-left point
         ]
 
         self.neighbours = [
-                [x  , y-1, True],         # top
-                [x+1, y  , True],         # right
-                [x  , y+1, True],         # bottom
-                [x-1, y  , True]          # left
+                [x  , y-1, True],         # top neighbour
+                [x+1, y  , True],         # right neighbour
+                [x  , y+1, True],         # bottom neighbour
+                [x-1, y  , True]          # left neighbour
         ]
 
         # checks for invalid neighbours
@@ -38,6 +40,7 @@ class Node:
             if (self.neighbours[i][0] >= columns or self.neighbours[i][1] >= rows) or self.neighbours[i][0] < 0 or self.neighbours[i][1] < 0:
                self.neighbours[i][2] = False
 
+    # for display purposes in pygame
     def display(self, canvas):
         width = Node.width
         height = Node.height
@@ -51,6 +54,7 @@ class Node:
             if self.neighbours[i-1][2]:
                 pg.draw.line(canvas, BLACK, self.gridpoints[i], self.gridpoints[i-1], 3)
 
+    # mark node object as visited
     def markAsVisited(self):
         Node.stack.append(self)
         self.visited = True
@@ -58,6 +62,7 @@ class Node:
     def unNeighbour(self, pos):
         self.neighbours[pos][2] = False
 
+    # checks whether the algorithm checks for a node out of the boundary
     @classmethod
     def outOfBounds(cls, x, y):
         if 0 > x or 0 > y or cls.columns <= x or cls.rows <= y:
@@ -82,6 +87,7 @@ class Node:
             return True
         return False
 
+# for display purposes
 def displayGrids(canvas, li):
     width = Node.width
     height = Node.height
@@ -91,9 +97,11 @@ def displayGrids(canvas, li):
     for i in range(len(li)):
         for j in range(len(li[i])):
             li[i][j].display(canvas)
+   
+    # pg.draw.rect(canvas, BLACK, (width, height, li[0][-1].gridpoints[1][0] - li[0][0].gridpoints[0][0], rows*height), 5)
+    pg.draw.rect(canvas, BLACK, (width, height, columns*width+2, rows*height+2), 4)
 
-    pg.draw.rect(canvas, BLACK, (width, height, columns*width, rows*height), 3)
-
+# function to pick a random starting node
 def pickStartingNode(li):
     while True:
         x = random.randrange(0, Node.columns)
@@ -104,11 +112,12 @@ def pickStartingNode(li):
 
     return li[y][x]
 
+# function to generate a 2-dimensional list of node objects
 def generateNodes(rows, columns):
     Node.rows = rows
     Node.columns = columns
-    Node.width  = W_WIDTH / (Node.columns + 2)
-    Node.height = W_HEIGHT / (Node.rows + 2)
+    Node.width  = (W_WIDTH / (Node.columns + 2))
+    Node.height = (W_HEIGHT / (Node.rows + 2))
     li = []
     
     for i in range(rows):
@@ -120,6 +129,7 @@ def generateNodes(rows, columns):
 
     return li
 
+# function to select the next current node
 def nextNode(li, node1):
     pos = ["up", "right", "bottom", "left"]
     length = len(node1.neighbours)
@@ -148,3 +158,10 @@ def nextNode(li, node1):
     Node.popStack()
     if not Node.stackIsEmpty():
         return Node.topOfStack()
+
+def pickStartFinish(li, rows, columns):
+    return li[0][0], li[rows-1][columns-1]
+
+def displayStartFinish(canvas, start, finish):
+    pg.draw.rect(canvas, GREY, (start.gridpoints[0][0], start.gridpoints[0][1], Node.width, Node.height), 0)
+    pg.draw.rect(canvas, MACCENT, (finish.gridpoints[0][0], finish.gridpoints[0][1], Node.width, Node.height), 0)
