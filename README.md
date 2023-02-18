@@ -4,6 +4,7 @@ A-Maze Us, a maze generator using iterative depth-first search algorithm.
 This repository contains the following:
 - PowerPoint presentation
 - Documentation
+- Instructional manual
 - Source code
 
 Made by Group 4 of BSCS 2-4 as final requirement in Discrete Structures 2.
