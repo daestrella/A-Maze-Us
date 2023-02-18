@@ -2,10 +2,13 @@ import sys
 import pygame as pg
 from src.const import *
 from src.node import *
+from datetime import date
 
+# initialize rows and columns (5 by 5 by default)
 rows    = INIT_ROWS
 columns = INIT_COLUMNS
 
+# Game class to handle GUI
 class Game:
     def __init__(self, width, height):
         pg.init()
@@ -15,12 +18,14 @@ class Game:
         self.clock = pg.time.Clock()
         self.fps = 60
         self.state = False
+        self.icon = pg.image.load("icon.jpg")
 
     def renderText(self, string, color, size, coordinates):
         font = pg.font.Font("Inter.ttf", size)
         text = font.render(string, False, color)
         self.window.blit(text, coordinates)
     
+    # center-aligned text
     def renderCenteredText(self, string, color, size, y):
         font = pg.font.Font("Inter.ttf", size)
         text = font.render(string, False, color)
@@ -28,23 +33,26 @@ class Game:
         self.window.blit(text, (x, y))
         return [x, y, x+text.get_width(), y+text.get_height()]
 
+    # right-aligned text
     def renderRightText(self, string, color, size, y):
         font = pg.font.Font("Inter.ttf", size)
         text = font.render(string, False, color)
         x = self.width - text.get_width()
         self.window.blit(text, (x, y))
         return [x, y, x+text.get_width(), y+text.get_height()]
-    
+
+    # tutorial screen
     def tutorial(self):
         while True:
             self.window.fill(SACCENT)
-            self.renderCenteredText("Tutorial", MACCENT, 70, 100)
-            self.renderCenteredText("Press R to generate another maze.", BLACK, 30, 250)
-            self.renderCenteredText("Use the left and right arrow keys", BLACK, 30, 320)
-            self.renderCenteredText("to adjust the column count.", BLACK, 30, 360)
-            self.renderCenteredText("Use the up and down arrow keys", BLACK, 30, 430)
-            self.renderCenteredText("to adjust the row count.", BLACK, 30, 470)
-            self.renderCenteredText("(Press any key to continue.)", GREY, 30, 540)
+            self.renderCenteredText("Tutorial", MACCENT, 70, 50)
+            self.renderCenteredText("Press R to generate another maze.", BLACK, 30, 200)
+            self.renderCenteredText("Use the left and right arrow keys", BLACK, 30, 270)
+            self.renderCenteredText("to adjust the column count.", BLACK, 30, 310)
+            self.renderCenteredText("Use the up and down arrow keys", BLACK, 30, 380)
+            self.renderCenteredText("to adjust the row count.", BLACK, 30, 420)
+            self.renderCenteredText("Press S to export the maze.", BLACK, 30, 490)
+            self.renderCenteredText("(Press any key to continue.)", GREY, 30, 560)
             for event in pg.event.get():
                 if event.type == pg.KEYDOWN or event.type == pg.MOUSEBUTTONDOWN:
                     return
@@ -53,6 +61,7 @@ class Game:
                     sys.exit(0)
             pg.display.update()
 
+    # maze screen
     def generate_state(self):
         self.tutorial()
         self.canvas = pg.Surface((self.width, self.height))
@@ -60,26 +69,33 @@ class Game:
         while True:
             nlist = generateNodes(rows, columns)
             currentNode = pickStartingNode(nlist)
-
+            
+            start_node, finish_node = pickStartFinish(nlist, rows, columns)
             proceed = True
             while proceed:
                 proceed = genInputs()
                 self.window.fill(WHITE)
                 self.window.blit(self.canvas, (0, 0))
                 self.canvas.fill(WHITE)
-            
-                if currentNode is not None:
+
+                displayStartFinish(self.canvas, start_node, finish_node)
+
+                #if currentNode is not None:  #this is frame-dependent generation
+                while currentNode is not None:
                     currentNode = nextNode(nlist, currentNode)
 
                 self.renderText(f"Rows: {rows}, Columns: {columns}", MACCENT, 15, (0, self.width-15))
                 displayGrids(self.canvas, nlist)
                 pg.display.update()
+                self.clock.tick(self.fps)
 
+    # this screen starts at initialization
     def main_menu(self):
         global start_button
         global quit_button
         
         pg.display.set_caption("A-Maze Us")
+        pg.display.set_icon(self.icon)
 
         while True:
             self.window.fill(BLACK)
@@ -101,6 +117,7 @@ class Game:
             pg.display.update()
             self.clock.tick(60)
 
+# this handles keyboard and mouse inputs in main menu
 def mmInputs():
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -116,6 +133,7 @@ def mmInputs():
                 pg.quit()
                 sys.exit(0)
 
+# this handles keyboard inputs in maze screen 
 def genInputs():
     global rows
     global columns
@@ -127,23 +145,32 @@ def genInputs():
         if event.type == pg.KEYDOWN and event.key == pg.K_q:
             pg.quit()
             sys.exit(0)
+        # reset maze
         if event.type == pg.KEYDOWN and event.key == pg.K_r:
             return False
+        # decrease column count
         if event.type == pg.KEYDOWN and event.key == pg.K_DOWN and columns > 1:
             columns = columns - 1
             return False
+        # increase row count
         if event.type == pg.KEYDOWN and event.key == pg.K_UP:
             columns = columns + 1
             return False
+        # decrease row count
         if event.type == pg.KEYDOWN and event.key == pg.K_LEFT and rows > 1:
             rows = rows - 1
             return False
+        # increase row count
         if event.type == pg.KEYDOWN and event.key == pg.K_RIGHT:
             rows = rows + 1
             return False
+        if event.type == pg.KEYDOWN and event.key == pg.K_s:
+            pg.image.save(mzGen.canvas,f"{rows}x{columns}Maze{date.today()}.png")
 
     return True
 
+# Checks mouse position when clicking an element
+# This was used to determine whether the user click a button or not
 def mousePosCompare(mousePos, range):
     mouseX, mouseY = mousePos
     x0, y0, x1, y1 = range
@@ -151,6 +178,6 @@ def mousePosCompare(mousePos, range):
         return False
     return True
 
+# execution
 mzGen = Game(W_WIDTH, W_HEIGHT)
 mzGen.main_menu()
-
